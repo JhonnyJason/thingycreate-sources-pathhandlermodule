@@ -6,6 +6,7 @@ log = (arg) ->
     return
 olog = (o) -> log "\n" + ostr(o)
 ostr = (o) -> JSON.stringify(o, null, 4)
+print = (arg) -> console.log(arg)
 #endregion
 
 ############################################################
@@ -19,17 +20,30 @@ exec = require("child_process").exec
 #endregion
 
 ############################################################
-#region localModules
 utl = null
 cfg = null
 #endregion
-#endregion
 
+############################################################
+#region properties
 ############################################################
 #region internalProperties
 homedir = os.homedir()
 thingyName = ""
+
+############################################################
 try specifics = require "./pathhandlerspecifics" catch err
+#endregion
+
+############################################################
+#region exposedProperties
+pathhandlermodule.homedir = homedir #directory
+pathhandlermodule.userConfigPath = "" #file
+pathhandlermodule.basePath = "" #directory
+pathhandlermodule.thingyPath = "" #directory
+pathhandlermodule.temporaryFilesPath = "" #directory
+pathhandlermodule.recipesPath = ""
+#endregion
 #endregion
 
 ############################################################
@@ -70,6 +84,8 @@ resolveHomeDir = (path) ->
         path = path.replace("~", homedir)
     return path
 
+
+############################################################
 checkSomethingExists = (something) ->
     try
         await fs.lstat(something)
@@ -92,54 +108,13 @@ checkDirectoryIsInGit = (path) ->
 #endregion
 
 ############################################################
-#region exposed
-#region exposedProperties
-pathhandlermodule.keysDirectory = ""
-pathhandlermodule.configPath = ""
-
-pathhandlermodule.homedir = homedir #directory
-pathhandlermodule.userConfigPath = "" #file
-pathhandlermodule.basePath = "" #directory
-pathhandlermodule.thingyPath = "" #directory
-pathhandlermodule.temporaryFilesPath = "" #directory
-pathhandlermodule.recipesPath = ""
-#endregion
-
 #region exposedFunctions
-pathhandlermodule.setKeysDirectory = (keysDir) ->
-    if keysDir
-        if pathModule.isAbsolute(keysDir)
-            pathhandlermodule.keysDirectory = keysDir
-        else
-            pathhandlermodule.keysDirectory = pathModule.resolve(process.cwd(), keysDir)
-    else
-        throw "Trying to set undefined or empty directory for the keys."
-
-    exists = await checkDirectoryExists(pathhandlermodule.keysDirectory)
-    if !exists
-        throw new Error("Provided directory " + keysDir + " does not exist!")
-
-pathhandlermodule.setConfigFilePath = (configPath) ->
-    if configPath
-        if pathModule.isAbsolute(configPath)
-            pathhandlermodule.configPath = configPath
-        else
-            pathhandlermodule.configPath = pathModule.resolve(process.cwd(), configPath)
-    else
-        throw "Trying to set undefined or empty directory for the keys."
-
-pathhandlermodule.getConfigRequirePath = -> pathhandlermodule.configPath
-
-pathhandlermodule.getPrivKeyPath = (repo) ->
-    return pathModule.resolve(pathhandlermodule.keysDirectory, repo)
-
-pathhandlermodule.getPubKeyPath = (repo) ->
-    return pathModule.resolve(pathhandlermodule.keysDirectory, repo + ".pub")
-
 pathhandlermodule.resolve = (base, other) ->
     log "pathhandlermodule.resolve"
     return pathModule.resolve(base, other)
 
+############################################################
+#region preparationFunctions
 pathhandlermodule.prepareBasePath = (providedPath) ->
     log "pathhandlermodule.checkBase"
     
@@ -174,7 +149,10 @@ pathhandlermodule.prepareRecipesPath = ->
     if !cfg.userConfig.recipesPath then cfg.userConfig.recipesPath = "~/.config/thingyBubble/recipes"
     pathhandlermodule.recipesPath = resolveHomeDir(cfg.userConfig.recipesPath)
     return
+#endregion
 
+############################################################
+#region checkPathsExistence
 pathhandlermodule.ensureDirectoryExists = (directory) ->
     log "pathhandlermodule.ensureDirectoryExists"
     directory = resolveHomeDir(directory)
@@ -189,6 +167,12 @@ pathhandlermodule.directoryExistsAtBase = (dirName) ->
     dirPath = pathModule.resolve(pathhandlermodule.basePath, dirName)
     return await checkDirectoryExists(dirPath)
 
+pathhandlermodule.doesExists = (name) ->
+    return await checkSomethingExists(name)
+
+pathhandlermodule.directoryExists = (dirName) ->
+    return await checkDirectoryExists(dirName)
 #endregion
 #endregion
+
 module.exports = pathhandlermodule
