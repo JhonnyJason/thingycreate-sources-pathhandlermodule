@@ -109,9 +109,13 @@ checkDirectoryIsInGit = (path) ->
 
 ############################################################
 #region exposedFunctions
-pathhandlermodule.resolve = (base, other) ->
-    log "pathhandlermodule.resolve"
-    return pathModule.resolve(base, other)
+pathhandlermodule.resolve = pathModule.resolve
+
+pathhandlermodule.relative = pathModule.relative
+
+pathhandlermodule.resolveHomeDir = resolveHomeDir
+
+pathhandlermodule.checkDirectoryExists = checkDirectoryExists
 
 ############################################################
 #region preparationFunctions
